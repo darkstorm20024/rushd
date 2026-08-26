@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tatabuq Recruitment | منصة توفير المرشحين الفورية</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .hero{ padding:60px 0 20px; }
+  .hero-badge{ display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); color:#0E8F76; font-weight:700; font-size:13px; padding:8px 16px; border-radius:30px; margin-bottom:18px; }
+  .hero h1{ font-size:38px; font-weight:800; line-height:1.4; margin-bottom:14px; color:#151833; text-align:center; }
+  .hero h1 .hl{ color:var(--primary); }
+  .hero p.lead{ font-size:16px; color:var(--muted); margin-bottom:20px; max-width:560px; text-align:center; margin-left:auto; margin-right:auto; }
+  .search-panel{ background:var(--card); border:1px solid var(--border); border-radius:22px; padding:32px; box-shadow:0 20px 60px rgba(30,20,90,.08); margin-bottom:40px; }
+  .search-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .f-item label{ font-size:13px; font-weight:700; display:block; margin-bottom:6px; }
+  .f-item input, .f-item select{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:#FBFBFE; font-family:inherit; }
+  .search-actions{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  #results-area{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .dres-card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .dres-top{ display:flex; justify-content:space-between; margin-bottom:14px; align-items:center; }
+  .dres-top .score{ background:var(--accent-soft); color:#0E8F76; font-weight:800; padding:4px 10px; border-radius:20px; font-size:13px; }
+  .dres-row{ font-size:13px; color:var(--muted); margin-bottom:6px; }
+  .dres-btn{ width:100%; margin-top:14px; padding:10px; border-radius:10px; border:none; background:var(--primary); color:#fff; font-weight:700; cursor:pointer; font-size:13px; }
+  .empty-state, .loading-state{ text-align:center; color:var(--muted); padding:40px; grid-column:1/-1; }
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#151833; color:#fff; padding:14px 26px; border-radius:12px; font-size:14px; z-index:100; display:none; }
+  @media(max-width:900px){ .search-grid, #results-area{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.svg" alt="Tatabuq Recruitment"> Tatabuq Recruitment</div>
+    <div class="nav-links">
+      <a href="index.html" class="active">البحث عن مرشحين</a>
+      <a href="pricing.html">الباقات والأسعار</a>
+      <a href="how-it-works.html">كيف تعمل</a>
+      <a href="dashboard.html">لوحة تتبعي</a>
+      <button class="btn btn-primary btn-sm" onclick="location.href='login.html'" id="auth-btn">تسجيل الدخول</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="wrap">
+    <div style="text-align:center;"><span class="hero-badge">⚡ نتائج فورية بدقة تطابق عالية</span></div>
+    <h1>وفّري وقتك وجهدك في <span class="hl">فرز والبحث</span> عن أفضل المرشحين</h1>
+    <p class="lead">تطابُق للتوظيف تربطك مباشرة بقاعدة بيانات ضخمة من السير الذاتية المفهرسة، مع نسبة تطابق فورية لكل وظيفة</p>
+  </div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="search-panel">
+      <div class="search-grid">
+        <div class="f-item"><label>المسمى الوظيفي *</label><input type="text" id="job_title" placeholder="مثال: محاسب، مهندس مدني، اخصائي موارد بشرية" required></div>
+        <div class="f-item"><label>المدينة</label><input type="text" id="city" placeholder="مثال: الدمام، الرياض، جدة"></div>
+        <div class="f-item"><label>نوع العمل</label>
+          <select id="work_type"><option value="">أي نوع</option><option value="دوام كامل">دوام كامل</option><option value="عن بعد">عن بعد</option></select>
+        </div>
+        <div class="f-item"><label>سنوات الخبرة المطلوبة</label><input type="number" id="years_experience" placeholder="مثال: 3" min="0"></div>
+        <div class="f-item"><label>المؤهل العلمي</label>
+          <select id="education"><option value="">أي مؤهل</option><option value="High school">ثانوية عامة</option><option value="Diploma degree">دبلوم</option><option value="Bachelor Degree">بكالوريوس</option><option value="Master degree">ماجستير</option></select>
+        </div>
+        <div class="f-item"><label>الجنس (اختياري)</label>
+          <select id="gender"><option value="">أي جنس</option><option value="Male">ذكر</option><option value="Female">أنثى</option></select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <span style="font-size:13px;color:var(--muted);">* الحقل الوحيد المطلوب هو المسمى الوظيفي</span>
+        <button class="btn btn-primary" id="searchBtn" onclick="runSearch()">بحث عن مرشحين</button>
+      </div>
+    </div>
+    <div id="results-area"><div class="empty-state">أدخلي معايير الوظيفة أعلاه واضغطي "بحث عن مرشحين" لعرض النتائج</div></div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+<div id="footer-placeholder"></div>
+
+<script src="assets/config.js"></script>
+<script>
+let lastResults = [];
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
+function updateAuthUI(){
+  const email = localStorage.getItem('tatabuq_client_email');
+  const btn = document.getElementById('auth-btn');
+  if(email){ btn.textContent = 'حسابي'; btn.onclick = () => location.href = 'dashboard.html'; }
+}
+updateAuthUI();
+
+async function runSearch(){
+  const btn = document.getElementById('searchBtn');
+  const jobTitle = document.getElementById('job_title').value.trim();
+  if(!jobTitle){ showToast('من فضلك أدخلي المسمى الوظيفي'); return; }
+  const payload = {
+    job_title: jobTitle, city: document.getElementById('city').value.trim(),
+    work_type: document.getElementById('work_type').value,
+    years_experience: parseFloat(document.getElementById('years_experience').value) || 0,
+    education: document.getElementById('education').value, gender: document.getElementById('gender').value, skills: []
+  };
+  const resultsArea = document.getElementById('results-area');
+  resultsArea.innerHTML = '<div class="loading-state">🔍 جاري البحث في قاعدة البيانات...</div>';
+  btn.disabled = true;
+  try{
+    const res = await fetch(CONFIG.SEARCH_WEBHOOK_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    lastResults = data.results || [];
+    renderResults(lastResults);
+  }catch(err){ resultsArea.innerHTML = `<div class="empty-state">⚠️ تعذر الاتصال. تأكدي من رابط الـ Webhook.</div>`; }
+  finally{ btn.disabled = false; }
+}
+function renderResults(results){
+  const resultsArea = document.getElementById('results-area');
+  if(!results.length){ resultsArea.innerHTML = '<div class="empty-state">لا يوجد مرشحون مطابقون. جرّبي تخفيف الشروط.</div>'; return; }
+  resultsArea.innerHTML = results.map((c,i) => `
+    <div class="dres-card">
+      <div class="dres-top"><span><strong>مرشح رقم ${i+1}</strong></span><span class="score">${c.match_score}%</span></div>
+      <div class="dres-row">💼 ${c.job_title}</div>
+      <div class="dres-row">📍 ${c.city || c.region || '-'}</div>
+      <div class="dres-row">⏱️ ${c.experience_category || '-'}</div>
+      <div class="dres-row">🎓 ${c.education || '-'}</div>
+      <button class="dres-btn" onclick='requestContact(${i})'>طلب التواصل</button>
+    </div>`).join('');
+}
+async function requestContact(index){
+  const candidate = lastResults[index];
+  const email = localStorage.getItem('tatabuq_client_email');
+  if(!email){ showToast('سجّلي دخولك أولاً لطلب التواصل'); setTimeout(()=> location.href = 'login.html', 1200); return; }
+  try{
+    await fetch(CONFIG.CREATE_REQUEST_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ client_email: email, full_name: candidate.full_name, job_title: candidate.job_title,
+        city: candidate.city, education: candidate.education, experience_category: candidate.experience_category,
+        region: candidate.region, cv_url: candidate.cv_url, match_score: candidate.match_score }) });
+    showToast('تم تسجيل طلبك بنجاح، تابعيه من لوحة تتبع مرشحيك');
+  }catch(err){ showToast('حدث خطأ أثناء تسجيل الطلب'); }
+}
+fetch('footer.html').then(r=>r.text()).then(html => { document.getElementById('footer-placeholder').outerHTML = html; }).catch(()=>{});
+</script>
+</body>
+</html>

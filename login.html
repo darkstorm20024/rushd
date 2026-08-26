@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول | Tatabuq Recruitment</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+body{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+.auth-box{ background:var(--card); border-radius:22px; padding:40px; max-width:420px; width:100%; box-shadow:0 20px 60px rgba(30,20,90,.1); }
+.auth-box .logo{ justify-content:center; margin-bottom:8px; font-size:22px; }
+.subtitle{ text-align:center; color:var(--muted); font-size:14px; margin-bottom:30px; }
+.tabs{ display:flex; background:#F0F0F7; border-radius:12px; padding:4px; margin-bottom:24px; }
+.tab-btn{ flex:1; padding:10px; border:none; background:transparent; border-radius:10px; font-weight:700; cursor:pointer; color:var(--muted); font-family:inherit; }
+.tab-btn.active{ background:#fff; color:var(--primary-dark); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.f-item{ margin-bottom:16px; }
+.f-item label{ font-size:13px; font-weight:700; display:block; margin-bottom:6px; }
+.f-item input{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; }
+.btn-full{ width:100%; margin-top:8px; }
+.form-panel{ display:none; }
+.form-panel.active{ display:block; }
+.msg{ padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:16px; display:none; }
+.msg.error{ background:#FFF0F0; color:#C0392B; }
+.msg.success{ background:#E6FBF6; color:#1FAE7A; }
+.back-link{ display:block; text-align:center; margin-top:16px; font-size:13px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="auth-box">
+  <div class="logo"><img src="assets/logo.svg" alt="Tatabuq" style="width:32px;height:32px;border-radius:8px;"> Tatabuq Recruitment</div>
+  <div class="subtitle">منصة تتبع مرشحيك بعد طلب التواصل</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('login')">تسجيل الدخول</button>
+    <button class="tab-btn" onclick="switchTab('signup')">إنشاء حساب جديد</button>
+  </div>
+  <div class="msg" id="msg-box"></div>
+  <div class="form-panel active" id="login-panel">
+    <div class="f-item"><label>البريد الإلكتروني</label><input type="email" id="login-email"></div>
+    <div class="f-item"><label>كلمة المرور</label><input type="password" id="login-password"></div>
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">تسجيل الدخول</button>
+  </div>
+  <div class="form-panel" id="signup-panel">
+    <div class="f-item"><label>اسم الشركة</label><input type="text" id="signup-company"></div>
+    <div class="f-item"><label>اسم المسؤول</label><input type="text" id="signup-contact"></div>
+    <div class="f-item"><label>البريد الإلكتروني</label><input type="email" id="signup-email"></div>
+    <div class="f-item"><label>كلمة المرور</label><input type="password" id="signup-password"></div>
+    <div class="f-item"><label>رقم الجوال</label><input type="tel" id="signup-phone"></div>
+    <button class="btn btn-primary btn-full" id="signup-btn" onclick="doSignup()">إنشاء الحساب</button>
+  </div>
+  <a href="index.html" class="back-link">← رجوع لصفحة البحث</a>
+</div>
+<script src="assets/config.js"></script>
+<script>
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.form-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById(tab+'-panel').classList.add('active');
+  document.getElementById('msg-box').style.display = 'none';
+}
+function showMsg(msg, type){ const e = document.getElementById('msg-box'); e.textContent = msg; e.className = 'msg ' + type; e.style.display = 'block'; }
+async function doLogin(){
+  const btn = document.getElementById('login-btn');
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!email || !password){ showMsg('من فضلك أدخلي البريد وكلمة المرور', 'error'); return; }
+  btn.disabled = true;
+  try{
+    const res = await fetch(CONFIG.LOGIN_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password}) });
+    const data = await res.json();
+    if(!res.ok || !data.session_token){ showMsg(data.message || 'فشل تسجيل الدخول', 'error'); return; }
+    localStorage.setItem('tatabuq_client_email', data.email);
+    localStorage.setItem('tatabuq_company_name', data.company_name);
+    localStorage.setItem('tatabuq_session_token', data.session_token);
+    window.location.href = 'dashboard.html';
+  }catch(err){ showMsg('حدث خطأ أثناء الاتصال بالخادم', 'error'); }finally{ btn.disabled = false; }
+}
+async function doSignup(){
+  const btn = document.getElementById('signup-btn');
+  const payload = {
+    company_name: document.getElementById('signup-company').value.trim(),
+    contact_name: document.getElementById('signup-contact').value.trim(),
+    email: document.getElementById('signup-email').value.trim(),
+    password: document.getElementById('signup-password').value,
+    phone: document.getElementById('signup-phone').value.trim()
+  };
+  if(!payload.company_name || !payload.email || !payload.password){ showMsg('من فضلك عبّي كل الحقول المطلوبة', 'error'); return; }
+  btn.disabled = true;
+  try{
+    const res = await fetch(CONFIG.SIGNUP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if(!res.ok){ showMsg(data.message || 'فشل إنشاء الحساب', 'error'); return; }
+    switchTab('login');
+    document.getElementById('login-email').value = payload.email;
+    showMsg('تم إنشاء الحساب بنجاح، سجّلي دخولك الآن', 'success');
+  }catch(err){ showMsg('حدث خطأ أثناء إنشاء الحساب', 'error'); }finally{ btn.disabled = false; }
+}
+</script>
+</body>
+</html>

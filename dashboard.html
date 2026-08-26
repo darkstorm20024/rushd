@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تتبع مرشحيك | Tatabuq Recruitment</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.topbar{ background:var(--card); border-bottom:1px solid var(--border); padding:0 24px; height:72px; display:flex; align-items:center; justify-content:space-between; }
+.topbar .logo{ font-size:17px; }
+.topbar .logo img{ width:30px; height:30px; }
+.nav-mini{ display:flex; gap:16px; align-items:center; }
+.nav-mini a{ font-size:13px; font-weight:600; color:var(--muted); }
+.user-info{ display:flex; align-items:center; gap:14px; }
+.user-chip{ background:#F0F0F7; padding:8px 16px; border-radius:30px; font-size:13px; font-weight:600; }
+.logout-btn{ background:none; border:1px solid var(--border); padding:8px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-family:inherit; }
+.main{ padding:26px 32px; max-width:1400px; margin:0 auto; }
+.kpi-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:26px; }
+.kpi{ background:var(--card); border-radius:14px; padding:18px; border:1px solid var(--border); text-align:center; }
+.kpi .v{ font-size:24px; font-weight:800; color:var(--primary-dark); }
+.kpi .l{ font-size:12px; color:var(--muted); margin-top:4px; }
+.kanban{ display:grid; grid-template-columns:repeat(6,1fr); gap:14px; overflow-x:auto; }
+.kanban-col{ background:#EFEFF7; border-radius:14px; padding:14px; min-height:400px; }
+.kanban-col-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.kanban-col-head h4{ font-size:13px; font-weight:800; }
+.kanban-col-head .count{ background:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; color:var(--muted); }
+.candidate-card{ background:#fff; border-radius:12px; padding:12px; margin-bottom:10px; cursor:grab; box-shadow:0 2px 8px rgba(30,20,90,.06); border:1px solid var(--border); }
+.candidate-card.dragging{ opacity:.5; }
+.candidate-card .cname{ font-weight:700; font-size:13px; margin-bottom:4px; }
+.candidate-card .cjob{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+.candidate-card .cmeta{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+.candidate-card .score{ background:var(--accent-soft); color:#0E8F76; padding:1px 7px; border-radius:8px; font-weight:700; }
+.empty-msg{ text-align:center; color:var(--muted); font-size:12px; padding:20px; }
+.toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#151833; color:#fff; padding:14px 26px; border-radius:12px; font-size:14px; z-index:100; display:none; }
+@media(max-width:1100px){ .kanban{ grid-template-columns:1fr; } .kpi-row{ grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><img src="assets/logo.svg" alt="Tatabuq"> Tatabuq Recruitment</div>
+  <div class="nav-mini"><a href="index.html">البحث عن مرشحين</a><a href="pricing.html">الباقات</a></div>
+  <div class="user-info"><div class="user-chip" id="company-chip">شركتك</div><button class="logout-btn" onclick="logout()">تسجيل الخروج</button></div>
+</div>
+
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi"><div class="v" id="kpi-total">0</div><div class="l">إجمالي الطلبات</div></div>
+    <div class="kpi"><div class="v" id="kpi-new">0</div><div class="l">جديد</div></div>
+    <div class="kpi"><div class="v" id="kpi-interview">0</div><div class="l">في مرحلة المقابلة</div></div>
+    <div class="kpi"><div class="v" id="kpi-hired">0</div><div class="l">تم قبولهم</div></div>
+    <div class="kpi"><div class="v" id="kpi-rejected">0</div><div class="l">مرفوض</div></div>
+  </div>
+  <div class="kanban">
+    <div class="kanban-col" data-stage="جديد"><div class="kanban-col-head"><h4>جديد</h4><span class="count">0</span></div><div class="kanban-cards"></div></div>
+    <div class="kanban-col" data-stage="تمت المراجعة"><div class="kanban-col-head"><h4>تمت المراجعة</h4><span class="count">0</span></div><div class="kanban-cards"></div></div>
+    <div class="kanban-col" data-stage="مقابلة"><div class="kanban-col-head"><h4>مقابلة</h4><span class="count">0</span></div><div class="kanban-cards"></div></div>
+    <div class="kanban-col" data-stage="مقبول"><div class="kanban-col-head"><h4>مقبول</h4><span class="count">0</span></div><div class="kanban-cards"></div></div>
+    <div class="kanban-col" data-stage="مرفوض"><div class="kanban-col-head"><h4>مرفوض</h4><span class="count">0</span></div><div class="kanban-cards"></div></div>
+    <div class="kanban-col" data-stage="احتياطي"><div class="kanban-col-head"><h4>احتياطي</h4><span class="count">0</span></div><div class="kanban-cards"></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="assets/config.js"></script>
+<script>
+const STAGES = ["جديد", "تمت المراجعة", "مقابلة", "مقبول", "مرفوض", "احتياطي"];
+let allRequests = []; let draggedId = null;
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
+function checkAuth(){
+  const email = localStorage.getItem('tatabuq_client_email');
+  if(!email){ window.location.href = 'login.html'; return null; }
+  document.getElementById('company-chip').textContent = localStorage.getItem('tatabuq_company_name') || email;
+  return email;
+}
+function logout(){
+  localStorage.removeItem('tatabuq_client_email'); localStorage.removeItem('tatabuq_company_name'); localStorage.removeItem('tatabuq_session_token');
+  window.location.href = 'login.html';
+}
+async function loadRequests(){
+  const email = checkAuth(); if(!email) return;
+  try{
+    const res = await fetch(CONFIG.MY_REQUESTS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({client_email: email}) });
+    const data = await res.json();
+    allRequests = data.requests || [];
+    renderKanban(); renderKPIs();
+  }catch(err){ showToast('تعذر تحميل الطلبات'); }
+}
+function renderKPIs(){
+  document.getElementById('kpi-total').textContent = allRequests.length;
+  document.getElementById('kpi-new').textContent = allRequests.filter(r=>r.pipeline_stage==="جديد").length;
+  document.getElementById('kpi-interview').textContent = allRequests.filter(r=>r.pipeline_stage==="مقابلة").length;
+  document.getElementById('kpi-hired').textContent = allRequests.filter(r=>r.pipeline_stage==="مقبول").length;
+  document.getElementById('kpi-rejected').textContent = allRequests.filter(r=>r.pipeline_stage==="مرفوض").length;
+}
+function renderKanban(){
+  STAGES.forEach(stage => {
+    const col = document.querySelector(`.kanban-col[data-stage="${stage}"] .kanban-cards`);
+    const filtered = allRequests.filter(r => r.pipeline_stage === stage);
+    document.querySelector(`.kanban-col[data-stage="${stage}"] .count`).textContent = filtered.length;
+    col.innerHTML = filtered.map(r => `
+      <div class="candidate-card" draggable="true" data-id="${r.request_id}" ondragstart="handleDragStart(event,'${r.request_id}')">
+        <div class="cname">${r["Full Name"] || "مرشح"}</div>
+        <div class="cjob">${r["Your current job title"] || "-"} · ${r["City"] || r["Current Region"] || "-"}</div>
+        <div class="cmeta"><span>${r["Total Years of Experience"] || "-"}</span><span class="score">${r.match_score || 0}%</span></div>
+      </div>`).join('') || '<div class="empty-msg">لا يوجد مرشحون</div>';
+  });
+  setupDropZones();
+}
+function handleDragStart(e, id){ draggedId = id; e.target.classList.add('dragging'); }
+document.addEventListener('dragend', e => { if(e.target.classList.contains('candidate-card')) e.target.classList.remove('dragging'); });
+function setupDropZones(){
+  document.querySelectorAll('.kanban-cards').forEach(zone => {
+    zone.ondragover = e => e.preventDefault();
+    zone.ondrop = async e => {
+      e.preventDefault();
+      const newStage = zone.closest('.kanban-col').dataset.stage;
+      const req = allRequests.find(r => String(r.request_id) === String(draggedId));
+      if(!req || req.pipeline_stage === newStage) return;
+      req.pipeline_stage = newStage;
+      renderKanban(); renderKPIs();
+      try{
+        await fetch(CONFIG.UPDATE_STAGE_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({request_id: draggedId, new_stage: newStage}) });
+        showToast(`تم النقل إلى: ${newStage}`);
+      }catch(err){ showToast('حدث خطأ أثناء التحديث'); }
+    };
+  });
+}
+loadRequests();
+</script>
+</body>
+</html>
